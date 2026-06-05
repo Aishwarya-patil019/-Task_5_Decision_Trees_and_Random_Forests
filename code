@@ -1,0 +1,192 @@
+# Task 5 - Decision Trees and Random Forests
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import (
+    train_test_split,
+    cross_val_score
+)
+from sklearn.tree import (
+    DecisionTreeClassifier,
+    plot_tree
+)
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix
+)
+
+# =========================
+# Load Dataset
+# =========================
+
+df = pd.read_csv("/workspaces/-Task_5_Decision_Trees_and_Random_Forests/archive (4).zip")
+
+print("Dataset Shape:", df.shape)
+print(df.head())
+
+# =========================
+# Split Features & Target
+# =========================
+
+X = df.drop("target", axis=1)
+y = df["target"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+# =========================
+# Decision Tree Classifier
+# =========================
+
+dt = DecisionTreeClassifier(
+    random_state=42
+)
+
+dt.fit(X_train, y_train)
+
+y_pred_dt = dt.predict(X_test)
+
+dt_accuracy = accuracy_score(
+    y_test,
+    y_pred_dt
+)
+
+print("\nDecision Tree Accuracy:", dt_accuracy)
+
+# =========================
+# Visualize Tree
+# =========================
+
+plt.figure(figsize=(20,10))
+
+plot_tree(
+    dt,
+    feature_names=X.columns,
+    class_names=["No Disease", "Disease"],
+    filled=True
+)
+
+plt.title("Decision Tree")
+plt.savefig("decision_tree.png")
+plt.show()
+
+# =========================
+# Overfitting Control
+# =========================
+
+dt_depth5 = DecisionTreeClassifier(
+    max_depth=5,
+    random_state=42
+)
+
+dt_depth5.fit(X_train, y_train)
+
+pred_depth5 = dt_depth5.predict(X_test)
+
+depth5_accuracy = accuracy_score(
+    y_test,
+    pred_depth5
+)
+
+print(
+    "Decision Tree Accuracy (max_depth=5):",
+    depth5_accuracy
+)
+
+# =========================
+# Random Forest
+# =========================
+
+rf = RandomForestClassifier(
+    n_estimators=100,
+    random_state=42
+)
+
+rf.fit(X_train, y_train)
+
+rf_pred = rf.predict(X_test)
+
+rf_accuracy = accuracy_score(
+    y_test,
+    rf_pred
+)
+
+print(
+    "Random Forest Accuracy:",
+    rf_accuracy
+)
+
+# =========================
+# Feature Importance
+# =========================
+
+importance = pd.DataFrame({
+    "Feature": X.columns,
+    "Importance": rf.feature_importances_
+})
+
+importance = importance.sort_values(
+    by="Importance",
+    ascending=False
+)
+
+print("\nFeature Importance:")
+print(importance)
+
+plt.figure(figsize=(10,6))
+
+plt.barh(
+    importance["Feature"],
+    importance["Importance"]
+)
+
+plt.title("Feature Importance")
+plt.xlabel("Importance")
+plt.tight_layout()
+
+plt.savefig("feature_importance.png")
+plt.show()
+
+# =========================
+# Cross Validation
+# =========================
+
+cv_scores = cross_val_score(
+    rf,
+    X,
+    y,
+    cv=5
+)
+
+print(
+    "\nCross Validation Scores:",
+    cv_scores
+)
+
+print(
+    "Mean CV Accuracy:",
+    cv_scores.mean()
+)
+
+# =========================
+# Evaluation
+# =========================
+
+print("\nConfusion Matrix:")
+print(confusion_matrix(
+    y_test,
+    rf_pred
+))
+
+print("\nClassification Report:")
+print(classification_report(
+    y_test,
+    rf_pred
+))
